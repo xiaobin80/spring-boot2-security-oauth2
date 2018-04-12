@@ -3,6 +3,7 @@ package com.devglan.config;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.authentication.AuthenticationManager;
+import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.oauth2.config.annotation.configurers.ClientDetailsServiceConfigurer;
 import org.springframework.security.oauth2.config.annotation.web.configuration.AuthorizationServerConfigurerAdapter;
 import org.springframework.security.oauth2.config.annotation.web.configuration.EnableAuthorizationServer;
@@ -33,11 +34,13 @@ public class AuthorizationServerConfig extends AuthorizationServerConfigurerAdap
 
 	@Override
 	public void configure(ClientDetailsServiceConfigurer configurer) throws Exception {
-
+		// https://stackoverflow.com/questions/49582971/encoded-password-does-not-look-like-bcrypt
+		String strClient_secret = getPwdEncode(CLIENT_SECRET, 4);
+		
 		configurer
 				.inMemory()
 				.withClient(CLIEN_ID)
-				.secret(CLIENT_SECRET)
+				.secret(strClient_secret)
 				.authorizedGrantTypes(GRANT_TYPE_PASSWORD, AUTHORIZATION_CODE, REFRESH_TOKEN, IMPLICIT )
 				.scopes(SCOPE_READ, SCOPE_WRITE, TRUST)
 				.accessTokenValiditySeconds(ACCESS_TOKEN_VALIDITY_SECONDS).
@@ -48,5 +51,17 @@ public class AuthorizationServerConfig extends AuthorizationServerConfigurerAdap
 	public void configure(AuthorizationServerEndpointsConfigurer endpoints) throws Exception {
 		endpoints.tokenStore(tokenStore)
 				.authenticationManager(authenticationManager);
+	}
+	
+	/**
+	 * <p>Generate Bcrypt password</p>
+	 * @param client_secret - String
+	 * @param length - 4, 8, 10
+	 * @return BCrypt Password encode - String
+	 */
+	private String getPwdEncode(String client_secret, Integer length) {
+		BCryptPasswordEncoder pwdEncoder = new BCryptPasswordEncoder(length);
+
+		return pwdEncoder.encode(client_secret);
 	}
 }
